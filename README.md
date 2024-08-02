@@ -8,6 +8,7 @@ This project involves training a reinforcement learning agent using Deep Q-Learn
 2. Install dependencies: `pip install -r requirements.txt`
 3. Run the training script: `python train.py`
 4. Test the trained model: `python play.py`
+![simulation2](https://github.com/user-attachments/assets/b77e6773-3f32-4fce-be35-ffcddae59801)
 
 ## Video Demonstration
 [Watch the simulation video](<video_link>)
