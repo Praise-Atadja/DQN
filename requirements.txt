@@ -1,0 +1,10 @@
+gymnasium==0.29.1
+numpy==1.24.4
+stable-baselines3==2.3.2
+matplotlib==3.7.1
+shimmy==0.2.1
+h5py==3.8.0
+matplotlib==3.7.1
+opencv-python==4.7.0.72
+torch==2.0.1
+
