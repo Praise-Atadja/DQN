@@ -9,5 +9,7 @@ This project involves training a reinforcement learning agent using Deep Q-Learn
 3. Run the training script: `python train.py`
 4. Test the trained model: `python play.py`
 
+## Image
+
 ## Video Demonstration
 [Watch the simulation video](<video_link>)
