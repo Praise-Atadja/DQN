@@ -1,60 +1,45 @@
 #!/usr/bin/env python3
+import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
 from patient_routing_env import PatientRoutingEnv
 import time
-import numpy as np
-
-
-def render_grid(env):
-    # Get the current state representation from the environment
-    grid = np.zeros((env.envs[0].grid_size, env.envs[0].grid_size), dtype=int)
-    grid[env.envs[0].goal_pos[1], env.envs[0].goal_pos[0]] = 2  # Goal
-    for obs in env.envs[0].obstacles:
-        grid[obs[1], obs[0]] = 1  # Obstacles
-    grid[env.envs[0].agent_pos[1], env.envs[0].agent_pos[0]] = 3  # Agent
-
-    # Clear the terminal screen
-    print("\033c", end="")
-
-    # Create a string representation of the grid
-    grid_str = ""
-    for row in grid:
-        grid_str += ' '.join({
-            0: '.',
-            1: 'X',
-            2: 'G',
-            3: 'A'
-        }.get(cell, ' ') for cell in row) + '\n'
-
-    # Print the grid
-    print(grid_str)
 
 
 def play_simulation():
     # Initialize the environment
-    env = DummyVecEnv([lambda: PatientRoutingEnv()])  # Wrap environment
+    env = DummyVecEnv([lambda: PatientRoutingEnv(size=5, render_mode="human")])
 
     # Load the trained model
-    model = DQN.load('dqn_patient_routing_model')
+    model = DQN.load("dqn_patient_routing_model")
 
-    # Run the agent in the environment
-    obs = env.reset()
+    # Reset the environment
+    obs, _ = env.reset()
     done = False
-    step = 0
-    max_steps = 5 * 60 * 20  # 5 minutes at 20 fps
+    total_reward = 0
+    start_time = time.time()
+    max_time = 300  # 5 minutes in seconds
 
-    while not done and step < max_steps:
-        # Render the environment to the terminal
-        render_grid(env)
-        time.sleep(0.05)  # Delay to visualize movements
-
+    while not done and (time.time() - start_time) < max_time:
         # Predict the action based on the current observation
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
-        step += 1
+        obs, reward, done, _, _ = env.step(action)
 
-    print("Simulation complete.")
+        # Accumulate reward
+        total_reward += reward[0]
+
+        # Render the environment
+        env.render()
+
+        # Delay to ensure smooth animation
+        time.sleep(1 / env.metadata["render_fps"])
+
+    # Print results
+    print(f"Total Reward: {total_reward}")
+    print(f"Simulation Done: {done}")
+
+    # Close the environment
+    env.close()
 
 
 if __name__ == "__main__":

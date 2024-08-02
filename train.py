@@ -1,49 +1,38 @@
 #!/usr/bin/env python3
-import torch
-import torch.nn as nn
+import gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
+# Adjust import according to your file structure
 from patient_routing_env import PatientRoutingEnv
 
 
-class CustomDQN(nn.Module):
-    def __init__(self, obs_dim, n_actions):
-        super(CustomDQN, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(obs_dim, 64),  # First hidden layer
-            nn.ReLU(),
-            nn.Linear(64, 64),  # Second hidden layer
-            nn.ReLU(),
-            nn.Linear(64, n_actions)  # Output layer with number of actions
-        )
+def main():
+    # Initialize the environment
+    env = DummyVecEnv([lambda: PatientRoutingEnv(size=5)])
 
-    def forward(self, x):
-        return self.net(x)
-
-
-def train_model():
-    # Create the environment
-    env = DummyVecEnv([lambda: PatientRoutingEnv()])  # Wrap environment
-
-    # Define the custom network
-    env_sample = env.reset()
-    # Number of features in the observation space
-    obs_dim = env_sample.shape[1]
-    n_actions = env.action_space.n  # Number of actions
-
-    # Initialize the model with custom policy
-    policy_kwargs = dict(
-        net_arch=[64, 64]
+    # Define the model
+    model = DQN(
+        policy='MlpPolicy',
+        env=env,
+        verbose=1,
+        learning_rate=1e-3,
+        buffer_size=10000,
+        learning_starts=1000,
+        batch_size=64,
+        tau=1.0,
+        gamma=0.99,
+        train_freq=4,
+        target_update_interval=1000,
+        exploration_fraction=0.1,
+        exploration_final_eps=0.01,
     )
-    model = DQN("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
     # Train the model
-    model.learn(total_timesteps=50000)
+    model.learn(total_timesteps=10000)
 
-    # Save the trained model
-    model.save('dqn_patient_routing_model')
-    print("Model trained and saved.")
+    # Save the model
+    model.save("dqn_patient_routing_model")
 
 
 if __name__ == "__main__":
-    train_model()
+    main()
