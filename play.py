@@ -11,19 +11,24 @@ def play_simulation():
     env = DummyVecEnv([lambda: PatientRoutingEnv(size=5, render_mode="human")])
 
     # Load the trained model
-    model = DQN.load("dqn_patient_routing_model")
+    model = DQN.load("dqn_patient_routing")
 
     # Reset the environment
-    obs, _ = env.reset()
+    obs = env.reset()
     done = False
     total_reward = 0
     start_time = time.time()
     max_time = 300  # 5 minutes in seconds
 
-    while not done and (time.time() - start_time) < max_time:
+    while (time.time() - start_time) < max_time:
+        if done:
+            # Restart the environment if done
+            obs = env.reset()
+            done = False
+
         # Predict the action based on the current observation
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _, _ = env.step(action)
+        obs, reward, done, _ = env.step(action)
 
         # Accumulate reward
         total_reward += reward[0]
