@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import gym
 from gym import spaces
 from gym.envs.registration import register
@@ -7,18 +6,16 @@ import pygame
 
 
 class PatientRoutingEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
     def __init__(self, render_mode=None, size=5):
         super().__init__()
         self.size = size
-        self.window_size = 512
+        self.window_size = 800
+        self.max_steps = 100
 
-        # Define the observation space
         self.observation_space = spaces.Box(
             low=0, high=size - 1, shape=(4,), dtype=int)
-
-        # Define the action space
         self.action_space = spaces.Discrete(4)
         self._action_to_direction = {
             0: np.array([1, 0]),   # right
@@ -32,12 +29,13 @@ class PatientRoutingEnv(gym.Env):
         self.window = None
         self.clock = None
 
-        self.obstacles = []  # List to store obstacle positions
-        self.goal = None     # Goal position
-        self.current_reward = 0  # Initialize current reward
+        self.obstacles = []
+        self.goal = None
+        self.current_reward = 0
+        self.starting_point = np.array([0, 0])
+        self.steps_taken = 0
 
     def _get_obs(self):
-        # Flattened observation: [agent_x, agent_y, goal_x, goal_y]
         return np.concatenate([self._agent_location, self._goal_location])
 
     def _get_info(self):
@@ -45,28 +43,24 @@ class PatientRoutingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self._agent_location = self.np_random.integers(
-            0, self.size, size=2, dtype=int)
+        self._agent_location = self.starting_point.copy()
         self._goal_location = self.np_random.integers(
             0, self.size, size=2, dtype=int)
         while np.array_equal(self._goal_location, self._agent_location):
             self._goal_location = self.np_random.integers(
                 0, self.size, size=2, dtype=int)
 
-        # Fixed obstacle positions with specific names
         self.obstacles = [
-            (np.array([0, 1]), 'Nurse'),
-            (np.array([1, 2]), 'Doctor'),
-            (np.array([2, 1]), 'Nurse'),
-            (np.array([3, 3]), 'Restricted Area'),
-            (np.array([4, 0]), 'Emergency'),
-            (np.array([1, 4]), 'Waiting Room'),
-            (np.array([2, 3]), 'Doctor'),
-            (np.array([3, 2]), 'Restricted Room')
+            (np.array([0, 2]), 'Nurse'),
+            (np.array([3, 2]), 'Doctor'),
+            (np.array([3, 4]), 'Restricted'),
+            (np.array([4, 1]), 'Emergency'),
+            (np.array([1, 4]), 'Ward'),
+            (np.array([1, 4]), 'Doctor'),
         ]
 
-        # Reset current reward
         self.current_reward = 0
+        self.steps_taken = 0
 
         observation = self._get_obs()
         info = self._get_info()
@@ -81,13 +75,23 @@ class PatientRoutingEnv(gym.Env):
         new_location = np.clip(self._agent_location +
                                direction, 0, self.size - 1)
 
-        # Check if the new location is occupied by an obstacle
+        reward = 0
+
         if new_location.tolist() not in [o[0].tolist() for o in self.obstacles]:
             self._agent_location = new_location
+        else:
+            self._agent_location = self.starting_point
+            reward = -10
 
         terminated = np.array_equal(self._agent_location, self._goal_location)
-        reward = 10 if terminated else 0  # Positive reward for reaching the goal
-        self.current_reward += reward  # Update accumulated reward
+        if terminated and self.steps_taken > 10:
+            reward = 10
+            self._agent_location = self._goal_location
+
+        self.current_reward += reward
+        self.steps_taken += 1
+
+        done = terminated or self.steps_taken >= self.max_steps
 
         observation = self._get_obs()
         info = self._get_info()
@@ -95,7 +99,7 @@ class PatientRoutingEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, terminated, False, info
+        return observation, reward, done, False, info
 
     def render(self):
         if self.render_mode == "rgb_array":
@@ -114,11 +118,10 @@ class PatientRoutingEnv(gym.Env):
         canvas.fill((255, 255, 255))
         pix_square_size = self.window_size / self.size
 
-        # Draw obstacles with labels
         for obstacle, label in self.obstacles:
             pygame.draw.rect(
                 canvas,
-                (0, 0, 0),  # Black for obstacles
+                (0, 0, 0),
                 pygame.Rect(
                     pix_square_size * obstacle,
                     (pix_square_size, pix_square_size),
@@ -129,10 +132,9 @@ class PatientRoutingEnv(gym.Env):
             canvas.blit(text, (pix_square_size *
                         obstacle[0] + 5, pix_square_size * obstacle[1] + 5))
 
-        # Draw goal with label
         pygame.draw.rect(
             canvas,
-            (255, 0, 0),  # Red for goal
+            (255, 0, 0),
             pygame.Rect(
                 pix_square_size * self._goal_location,
                 (pix_square_size, pix_square_size),
@@ -143,19 +145,17 @@ class PatientRoutingEnv(gym.Env):
         canvas.blit(text, (pix_square_size *
                     self._goal_location[0] + 5, pix_square_size * self._goal_location[1] + 5))
 
-        # Draw agent with label
         pygame.draw.circle(
             canvas,
-            (0, 0, 255),  # Blue for agent
+            (0, 0, 255),
             (self._agent_location + 0.5) * pix_square_size,
             pix_square_size / 3,
         )
-        font = pygame.font.SysFont(None, 24)
-        text = font.render('Agent', True, (255, 255, 255))
+        font = pygame.font.SysFont(None, 16)
+        text = font.render('Patient', True, (255, 255, 255))
         canvas.blit(text, ((self._agent_location + 0.5) * pix_square_size - (pix_square_size / 6),
                     (self._agent_location + 0.5) * pix_square_size - (pix_square_size / 6)))
 
-        # Draw grid
         for x in range(self.size + 1):
             pygame.draw.line(
                 canvas,
@@ -172,7 +172,6 @@ class PatientRoutingEnv(gym.Env):
                 width=3,
             )
 
-        # Draw rewards outside the grid
         font = pygame.font.SysFont(None, 20)
         reward_text = font.render(
             f'Reward: {self.current_reward}', True, (0, 0, 0))
@@ -192,9 +191,8 @@ class PatientRoutingEnv(gym.Env):
             pygame.quit()
 
 
-# Register the environment
 register(
     id='gym_examples/GridWorld-v0',
     entry_point='patient_routing_env:PatientRoutingEnv',
-    max_episode_steps=1000,  # Increased to allow longer simulations
+    max_episode_steps=1000,
 )
