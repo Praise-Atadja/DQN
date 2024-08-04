@@ -10,9 +10,9 @@ This project involves training a reinforcement learning agent using Deep Q-Learn
 4. Test the trained model: `python play.py`
 
 
-## Image
-![simulation2](https://github.com/user-attachments/assets/8fabefec-42ad-4202-8927-ac0df9c75749)
-
-
 ## Video Demonstration
-[Watch the simulation video](<video_link>)
+### Introduction
+[Watch the introduction video](<https://drive.google.com/file/d/1N2ou0z9Mo0N8CTLB4Hj1gzIeiTpDTWeN/view?usp=sharing>)
+
+### Simulation Video
+[Watch the simulation video](<https://drive.google.com/file/d/1npR5yFrasUxeZaYVU9WAZkLz12_HeicQ/view?usp=sharing>)
