@@ -15,4 +15,4 @@ This project involves training a reinforcement learning agent using Deep Q-Learn
 [Watch the introduction video](<https://drive.google.com/file/d/1N2ou0z9Mo0N8CTLB4Hj1gzIeiTpDTWeN/view?usp=sharing>)
 
 ### Simulation Video
-[Watch the simulation video](<https://drive.google.com/file/d/1npR5yFrasUxeZaYVU9WAZkLz12_HeicQ/view?usp=sharing>)
+[Watch the simulation video](<https://drive.google.com/file/d/19RapPrywIV5rwGqyYKWUdAmLaugQv3Yf/view?usp=sharing>)

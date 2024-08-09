@@ -10,7 +10,7 @@ def play_simulation():
     env = DummyVecEnv([lambda: PatientRoutingEnv(size=5, render_mode=None)])
 
     # Load the trained model
-    model = DQN.load("dqn_patient_routing1")
+    model = DQN.load("dqn_patient_routing_real")
 
     # Reset the environment
     obs = env.reset()
@@ -24,7 +24,7 @@ def play_simulation():
 
         # Predict the action based on the current observation
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, info = env.step(action)
+        obs, reward, done, _, info = env.step(action)
 
         # Accumulate reward
         total_reward += reward[0]
@@ -32,8 +32,9 @@ def play_simulation():
         # Print progress for debugging
         print(f"Step: {step}, Obs: {obs}, Reward: {reward}, Done: {done}")
 
-    # Render the simulation if the goal is reached
+    # Check if the agent reached the goal
     if done:
+        # Reinitialize the environment with rendering enabled
         env = DummyVecEnv(
             [lambda: PatientRoutingEnv(size=5, render_mode="human")])
 
@@ -45,8 +46,9 @@ def play_simulation():
                 break
 
             action, _ = model.predict(obs, deterministic=True)
-            obs, reward, done, info = env.step(action)
+            obs, reward, done, _, info = env.step(action)
             env.render()
+            # Adjust speed as needed
             time.sleep(1 / env.metadata["render_fps"])
 
         print("Successful simulation rendered.")

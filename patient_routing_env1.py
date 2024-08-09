@@ -44,7 +44,11 @@ class PatientRoutingEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self._agent_location = self.starting_point.copy()
-        self._goal_location = np.array([4, 4])  # Set fixed goal location
+        self._goal_location = self.np_random.integers(
+            0, self.size, size=2, dtype=int)
+        while np.array_equal(self._goal_location, self._agent_location):
+            self._goal_location = self.np_random.integers(
+                0, self.size, size=2, dtype=int)
 
         self.obstacles = [
             (np.array([0, 2]), 'Nurse'),
@@ -80,15 +84,14 @@ class PatientRoutingEnv(gym.Env):
             reward = -10
 
         terminated = np.array_equal(self._agent_location, self._goal_location)
-        if terminated:
-            reward = 100  # Set fixed reward for reaching the goal
+        if terminated and self.steps_taken > 10:
+            reward = 10
             self._agent_location = self._goal_location
 
         self.current_reward += reward
         self.steps_taken += 1
 
-        truncated = self.steps_taken >= self.max_steps
-        done = terminated or truncated
+        done = terminated or self.steps_taken >= self.max_steps
 
         observation = self._get_obs()
         info = self._get_info()
@@ -96,7 +99,7 @@ class PatientRoutingEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, done, truncated, info
+        return observation, reward, done, False, info
 
     def render(self):
         if self.render_mode == "rgb_array":
